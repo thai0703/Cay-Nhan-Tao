@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soil Monitor</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <!-- CSS only -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous" />
+</head>
+
+<body>
+  <div class="container px-4">
+    <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom bcc-purle rounded">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+        <svg class="bi me-2" width="40" height="32">
+          <use xlink:href="#bootstrap"></use>
+        </svg>
+        <span class="fs-4 bcc-purle fw-bolder fs-2">Thiết bị quản trắc chất lượng không khí</span>
+      </a>
+    </header>
+
+    <div class="row g-5 mt-4 py-5">
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Nito</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="nito" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            10 mg/Kg
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="nitoChart"> </canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Photpho</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="photpho" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            90 mg/Kg
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="photphoChart"> </canvas>
+        </div>
+      </div>
+    </div>
+    <div class="row g-5">
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Kali</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="kali" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            20 mg/Kg
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="kaliChart"> </canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Độ ẩm đất</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="humi" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            20 %
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="humiChart"> </canvas>
+        </div>
+      </div>
+    </div>
+    <div class="d-grid col-3 mx-auto my-3 align-items-end">
+      <button id="update" class="btn btn-info">Refresh</button>
+    </div>
+  </div>
+
+  <!-- JavaScript Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8"
+    crossorigin="anonymous"></script>
+
+  <!-- socket -->
+  <script src="../socket.io/socket.io.js"></script>
+  <script>
+    const nito = document.getElementById("nito");
+    const photpho = document.getElementById("photpho");
+    const kali = document.getElementById("kali");
+    const humi = document.getElementById("humi");
+    const update = document.getElementById("update");
+
+    var socket = io();
+    socket.on('connect', function () {
+      console.log('Socket connected!');
+    });
+
+    update.addEventListener("click", () => {
+      socket.emit("UPDATE", "update");
+    });
+
+    socket.on("message1", (data) => {
+      nito.innerText = `${data.nito} mg/Kg`;
+      photpho.innerText = `${data.photpho} mg/Kg`;
+      kali.innerText = `${data.kali} mg/Kg`;
+      humi.innerText = `${data.humi} %`;
+      addData(nitoChart, data.nito);
+      addData(photphoChart, data.photpho);
+      addData(kaliChart, data.kali);
+      addData(humiChart, data.humi);
+      if (nitoChart.data.datasets[0].data.length > 30) removeData(nitoChart);
+      if (photphoChart.data.datasets[0].data.length > 30) removeData(photphoChart);
+      if (kaliChart.data.datasets[0].data.length > 30) removeData(kaliChart);
+      if (humiChart.data.datasets[0].data.length > 30) removeData(humiChart);
+
+    });
+  </script>
+
+  <!-- chart -->
+  <script>
+    let labels = [
+      60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32, 30, 28,
+      26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0,
+    ]
+    function chartGen(labelOfDataset, labelOfChart) {
+      return {
+        type: "line",
+        data: {
+          labels: labelOfChart,
+          datasets: [
+            {
+              label: labelOfDataset,
+              data: [],
+              borderColor: ["rgba(255, 100, 100, 1)"],
+              tension: 0.1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+        },
+      }
+    }
+
+    const confignitoCharts = chartGen("Chất lượng không khí", labels);
+    const configphotphoCharts = chartGen("Nồng độ khí cháy", labels);
+    const configkaliCharts = chartGen("Nồng độ khí CO", labels);
+    const configTempCharts = chartGen("Nhiệt độ", labels);
+    const configHumiCharts = chartGen("Độ ẩm", labels);
+    const configBuiCharts = chartGen("Nồng độ bụi", labels);
+
+    const nitoChart = new Chart(
+      document.getElementById("nitoChart").getContext("2d"),
+      confignitoCharts
+    );
+    const photphoChart = new Chart(
+      document.getElementById("photphoChart").getContext("2d"),
+      configphotphoCharts
+    );
+    const kaliChart = new Chart(
+      document.getElementById("kaliChart").getContext("2d"),
+      configkaliCharts
+    );
+
+    const humiChart = new Chart(
+      document.getElementById("humiChart").getContext("2d"),
+      configHumiCharts
+    );
+
+  </script>
+  <!-- update chart -->
+  <script>
+    function addData(chart, data) {
+      chart.data.datasets.forEach((dataset) => {
+        dataset.data.push(data);
+      });
+      chart.update();
+    }
+
+    function removeData(chart) {
+      chart.data.datasets.forEach((dataset) => {
+        dataset.data.shift();
+      });
+      chart.update();
+    }
+  </script>
+</body>
+
+</html>

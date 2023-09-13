@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Air Monitor</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <!-- CSS only -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous" />
+</head>
+
+<body>
+  <div class="container px-4">
+    <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom bcc-purle rounded">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+        <svg class="bi me-2" width="40" height="32">
+          <use xlink:href="#bootstrap"></use>
+        </svg>
+        <span class="fs-4 bcc-purle fw-bolder fs-2">Thiết bị quản trắc chất lượng không khí</span>
+      </a>
+    </header>
+
+    <div class="row g-5 mt-4 py-5">
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Chất lượng không khí</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="MQ135" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            10 ppm
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="airQuality"> </canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Nồng độ khí cháy</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="MQ6" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            90 ppm
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="mq6Chart"> </canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Nồng độ khí CO</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="MQ7" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            20 ppm
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="mq7Chart"> </canvas>
+        </div>
+      </div>
+    </div>
+    <div class="row g-5 ">
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Nhiệt độ</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="temp" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            30 độ C
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="tempChart"> </canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Độ ẩm</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="humi" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            90 %
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="humiChart"> </canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Nồng độ bụi</div>
+          <div class="fw-bold mt-5">Hiện tại :</div>
+          <div id="bui" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            90 ppm
+          </div>
+          <div class="fw-bold mb-4">Biểu đồ :</div>
+          <canvas class="bg-light my-3" id="buiChart"> </canvas>
+        </div>
+      </div>
+    </div>
+    <div class="d-grid col-3 mx-auto my-3 align-items-end">
+      <button id="update" class="btn btn-info">Refresh</button>
+    </div>
+  </div>
+
+  <!-- JavaScript Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8"
+    crossorigin="anonymous"></script>
+
+  <!-- socket -->
+  <script src="../socket.io/socket.io.js"></script>
+  <script>
+    const MQ135 = document.getElementById("MQ135");
+    const MQ6 = document.getElementById("MQ6");
+    const MQ7 = document.getElementById("MQ7");
+    const temp = document.getElementById("temp");
+    const humi = document.getElementById("humi");
+    const bui = document.getElementById("bui");
+    const update = document.getElementById("update");
+
+    var socket = io( {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 10,
+    });
+    socket.on('connect', function () {
+      console.log('Socket connected!');
+    });
+    socket.on('disconnect', function () {
+      console.log('Socket disconnected!');
+    });
+
+    socket.on("message", (data) => {
+      MQ135.innerText = `${data.mq135} ppm`;
+      MQ6.innerText = `${data.mq6} ppm`;
+      MQ7.innerText = `${data.mq7} ppm`;
+      temp.innerText = `${data.temp} độ C`;
+      humi.innerText = `${data.humi} %`;
+      bui.innerText = `${data.bui} ppm`;
+      addData(airQualityChart, data.mq135);
+      addData(mq6Chart, data.mq6);
+      addData(mq7Chart, data.mq7);
+      addData(tempChart, data.temp);
+      addData(humiChart, data.humi);
+      addData(buiChart, data.bui);
+      if (airQualityChart.data.datasets[0].data.length > 30) removeData(airQuality);
+      if (mq6Chart.data.datasets[0].data.length > 30) removeData(mq6Chart);
+      if (mq7Chart.data.datasets[0].data.length > 30) removeData(mq7Chart);
+      if (tempChart.data.datasets[0].data.length > 30) removeData(tempChart);
+      if (humiChart.data.datasets[0].data.length > 30) removeData(humiChart);
+      if (buiChart.data.datasets[0].data.length > 30) removeData(buiChart);
+
+    });
+  </script>
+
+  <!-- chart -->
+  <script>
+    let labels = [
+      60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32, 30, 28,
+      26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0,
+    ]
+    function chartGen(labelOfDataset, labelOfChart) {
+      return {
+        type: "line",
+        data: {
+          labels: labelOfChart,
+          datasets: [
+            {
+              label: labelOfDataset,
+              data: [],
+              borderColor: ["rgba(255, 100, 100, 1)"],
+              tension: 0.1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+        },
+      }
+    }
+
+    const configAirQualityCharts = chartGen("Chất lượng không khí", labels);
+    const configMq6Charts = chartGen("Nồng độ khí cháy", labels);
+    const configMq7Charts = chartGen("Nồng độ khí CO", labels);
+    const configTempCharts = chartGen("Nhiệt độ", labels);
+    const configHumiCharts = chartGen("Độ ẩm", labels);
+    const configBuiCharts = chartGen("Nồng độ bụi", labels);
+
+    const airQualityChart = new Chart(
+      document.getElementById("airQuality").getContext("2d"),
+      configAirQualityCharts
+    );
+    const mq6Chart = new Chart(
+      document.getElementById("mq6Chart").getContext("2d"),
+      configMq6Charts
+    );
+    const mq7Chart = new Chart(
+      document.getElementById("mq7Chart").getContext("2d"),
+      configMq7Charts
+    );
+
+    const tempChart = new Chart(
+      document.getElementById("tempChart").getContext("2d"),
+      configTempCharts
+    );
+
+    const humiChart = new Chart(
+      document.getElementById("humiChart").getContext("2d"),
+      configHumiCharts
+    );
+
+    const buiChart = new Chart(
+      document.getElementById("buiChart").getContext("2d"),
+      configBuiCharts
+    );
+
+  </script>
+  <!-- update chart -->
+  <script>
+    function addData(chart, data) {
+      chart.data.datasets.forEach((dataset) => {
+        dataset.data.push(data);
+      });
+      chart.update();
+    }
+
+    function removeData(chart) {
+      chart.data.datasets.forEach((dataset) => {
+        dataset.data.shift();
+      });
+      chart.update();
+    }
+  </script>
+</body>
+
+</html>
