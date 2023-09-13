@@ -52,6 +52,12 @@ io.on("connection", (socket) => {
   socket.on("event_name", (data) => {
     log(data)
   })
+  socket.on("event_name1", (data) => {
+    log(data)
+  })
+  socket.on("event_name2", (data) => {
+    log(data)
+  })
   /**************************** */
   //xu ly chung
   socket.on("reconnect", function () {
