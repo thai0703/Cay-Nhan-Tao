@@ -49,7 +49,7 @@ io.on("connection", (socket) => {
   });
 
   /**them gi thi them o giua day */
-  socket.on("event_name", (data) => {
+  socket.on("event_name1", (data) => {
     log(data)
   })
   /**************************** */
